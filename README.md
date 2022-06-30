@@ -9,13 +9,26 @@ En este base de datos puedes encontrar un montón de apartementos y sus reviews,
 
 Pregunta Si montarás un sitio real, ¿Qué posible problemas pontenciales les ves a como está almacenada la información?
 
+### Respuesta
+
+El principal problema que puedo detectar es el array de review, por que parece que guardan todas las review dentro del documento de cada apartamento/hotel/habitación. Es posible que ese  array crezca demasiado y que eso comprometa el rendimiento de mongo.
+
+creo que lo idóneo seria tener en ese documento por un lado las ultimas review digamos un array con 10 review y otro array con las 10 mejores valoraciones.
+
+Ademas añadiría otra colección en la que solo tengamos review pero seria documentos mucho mas pequeños y manejables, donde ademas de tener la valoración del cliente tendríamos un campo que haga referencia al sitio.
 ## Consultas
 ### Básico
 
 1. Saca en una consulta cuantos apartamentos hay en España.
 
 ```javascript
-//TODO pegar consulta
+
+db.listingsAndReviews.countDocuments({
+    "address.country":"Spain"
+})
+
+let respuesta = 633
+
 ```
 
 2. Lista los 10 primeros:
@@ -23,7 +36,19 @@ Pregunta Si montarás un sitio real, ¿Qué posible problemas pontenciales les v
         Ordenados por precio.
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews
+        .find(
+        {},
+        {
+                name:1, 
+                beds:1, 
+                price:1, 
+                "addres.government_area":1, 
+                _id:0
+        }
+        )
+        .sort({price:1})
+        .limit(10)
 ```
 
 ### Filtrando
@@ -33,19 +58,44 @@ Pregunta Si montarás un sitio real, ¿Qué posible problemas pontenciales les v
         Dos cuartos de baño.
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.find(
+    {
+        beds:{$gte:4},
+        bathrooms:{$gte:2}
+    }
+)
 ```
 
 2. Al requisito anterior,hay que añadir que nos gusta la tecnología queremos que el apartamento tenga wifi.
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.find(
+    {
+        beds:{$gte:4},
+        bathrooms:{$gte:2},
+        amenities:{
+            $all:['Wifi']
+        }
+        
+    }
+)
 ```
 
 3. Y bueno, un amigo se ha unido que trae un perro, así que a la query anterior tenemos que buscar que permitan mascota Pets Allowed
 
 ```javascript
-//TODO pegar consulta
+
+// añado una cama mas no queremos que el amigo duerma con el perro
+db.listingsAndReviews.find(
+    {
+        beds:{$gte:5},
+        bathrooms:{$gte:2},
+        amenities:{
+            $all:['Wifi', 'Pets allowed']
+        },
+        
+    }
+).size()
 ```
 
 ### Operadores lógicos
@@ -53,7 +103,18 @@ Pregunta Si montarás un sitio real, ¿Qué posible problemas pontenciales les v
 1. Estamos entre ir a Barcelona o a Portugal, los dos destinos nos valen, peeero... queremos que el precio nos salga baratito (50 $), y que tenga buen rating de reviews
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.find(
+    {
+        $or:[
+            {"address.country":"Portugal"},
+            {"address.market":"Barcelona"}
+        ],
+        $and:[
+            {price:{$lte:50}},
+            {"review_scores.review_scores_rating":{$gte:90}}
+        ]
+    },
+)
 ```
 
 ## Agregaciones
@@ -65,13 +126,41 @@ Pregunta Si montarás un sitio real, ¿Qué posible problemas pontenciales les v
         El precio (no queremos mostrar un objeto, sólo el campo de precio)
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.aggregate([
+    {
+        $match:{
+            "address.country":"Spain",
+        }
+    },
+    {
+        $project: {
+            nombre: "$name",
+            ciudad: "$address.market",
+            precio:{$toString: "$price"},
+            _id:0
+        }
+    }
+])
 ```
 
 2. Queremos saber cuantos alojamientos hay disponibles por pais.
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.aggregate([
+    {
+        $project:{
+            "address.country":1
+        }
+    },
+    {
+        $group: {
+          _id: "$address.country",
+          alojamientos_disponibles: {
+            $sum: 1
+          }
+        }
+    }
+])
 ```
 
 ## Opcional
