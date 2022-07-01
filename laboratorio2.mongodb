@@ -194,22 +194,76 @@ use('airbnb')
 
 // Queremos saber cuantos alojamientos hay disponibles por pais.
 
+// db.listingsAndReviews.aggregate([
+//     {
+//         $project:{
+//             "address.country":1
+//         }
+//     },
+//     {
+
+//         $group: {
+//           _id: "$address.country",
+//           alojamientos_disponibles: {
+//             $sum: 1
+//           }
+//         }
+//     }
+// ])
+
+// OPTIONAL
+
 db.listingsAndReviews.aggregate([
     {
-        $project:{
-            "address.country":1
+        $match: {
+          "address.country":{$regex:".*"}
         }
     },
     {
-        /**
-         * _id: The id of the group.
-         * fieldN: The first field name.
-         */
         $group: {
-          _id: "$address.country",
-          alojamientos_disponibles: {
-            $sum: 1
+          _id: "$bedrooms",
+          numero: {
+           $sum: 1
           }
+        }
+    },
+    {
+        $project: {
+          habitaciones : "$_id",
+          numero:1,
+          _id:0
         }
     }
 ])
+
+
+// db.listingsAndReviews.aggregate([
+//   {
+//     $match: {
+//       "address.country":"Spain"
+//     }
+//   },
+//   {
+//     $sort:{
+//       price:-1
+//     }
+//   },
+//   {
+//     $limit: 5
+//   },
+//   {
+    
+//     $project: {
+//       _id:0,
+//       nombre:"$name",
+//       ciudad:"$address.market",
+//       amenities:{
+//         $reduce:{
+//           input:"$amenities",
+//           initialValue:"",
+//           in:{$concat: ["$$value"," ","$$this"]}
+//         }
+//       }
+//     }
+//   }
+// ])

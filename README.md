@@ -168,13 +168,55 @@ db.listingsAndReviews.aggregate([
 1. Queremos saber el precio medio de alquiler de airbnb en España.
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.aggregate([
+    {
+        $match: {
+          "address.country":"Spain"
+        }
+    },
+    {
+        $group: {
+          _id: "$address.country",
+          media: {
+           $avg: "$price"
+          }
+        }
+    },
+    {
+        $project: {
+          ciudad : "$_id",
+          precio_medio_alquiler: {$toString:{$floor:"$media"}},
+          _id:0
+        }
+    }
+])
 ```
 
 2. ¿Y si quisieramos hacer como el anterior, pero sacarlo por paises?
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.aggregate([
+    {
+        $match: {
+          "address.country":{$regex:".*"}
+        }
+    },
+    {
+        $group: {
+          _id: "$address.country",
+          media: {
+           $avg: "$price"
+          }
+        }
+    },
+    {
+        $project: {
+          pais : "$_id",
+          precio_medio_alquiler: {$toString:{$floor:"$media"}},
+          _id:0
+        }
+    }
+])
 ```
 
 3. Repite los mismos pasos pero agrupando también por numero de habitaciones.
@@ -192,5 +234,34 @@ db.listingsAndReviews.aggregate([
     Amenities, pero en vez de un array, un string con todos los ammenities.
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.aggregate([
+  {
+    $match: {
+      "address.country":"Spain"
+    }
+  },
+  {
+    $sort:{
+      price:-1
+    }
+  },
+  {
+    $limit: 5
+  },
+  {
+    
+    $project: {
+      _id:0,
+      nombre:"$name",
+      ciudad:"$address.market",
+      amenities:{
+        $reduce:{
+          input:"$amenities",
+          initialValue:"",
+          in:{$concat: ["$$value"," ","$$this"]}
+        }
+      }
+    }
+  }
+])
 ```
