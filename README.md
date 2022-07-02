@@ -43,7 +43,7 @@ db.listingsAndReviews
                 name:1, 
                 beds:1, 
                 price:1, 
-                "addres.government_area":1, 
+                "address.government_area":1, 
                 _id:0
         }
         )
@@ -60,8 +60,8 @@ db.listingsAndReviews
 ```javascript
 db.listingsAndReviews.find(
     {
-        beds:{$gte:4},
-        bathrooms:{$gte:2}
+        beds:{$eq:4},
+        bathrooms:{$eq:2}
     }
 )
 ```
@@ -71,8 +71,8 @@ db.listingsAndReviews.find(
 ```javascript
 db.listingsAndReviews.find(
     {
-        beds:{$gte:4},
-        bathrooms:{$gte:2},
+        beds:{$eq:4},
+        bathrooms:{$eq:2},
         amenities:{
             $all:['Wifi']
         }
@@ -88,8 +88,8 @@ db.listingsAndReviews.find(
 // añado una cama mas no queremos que el amigo duerma con el perro
 db.listingsAndReviews.find(
     {
-        beds:{$gte:5},
-        bathrooms:{$gte:2},
+        beds:{$eq:5},
+        bathrooms:{$eq:2},
         amenities:{
             $all:['Wifi', 'Pets allowed']
         },
@@ -197,11 +197,6 @@ db.listingsAndReviews.aggregate([
 ```javascript
 db.listingsAndReviews.aggregate([
     {
-        $match: {
-          "address.country":{$regex:".*"}
-        }
-    },
-    {
         $group: {
           _id: "$address.country",
           media: {
@@ -222,7 +217,34 @@ db.listingsAndReviews.aggregate([
 3. Repite los mismos pasos pero agrupando también por numero de habitaciones.
 
 ```javascript
-//TODO pegar consulta
+db.listingsAndReviews.aggregate([
+    {
+        $group: {
+          _id:{
+          pais:"$address.country",
+          numeroDeCamas:"$bedrooms",
+          }, 
+          media: {
+           $avg: "$price",
+          }
+        }
+    },
+    {
+        $project: {
+          pais:"$_id.pais",
+          habitaciones : "$_id.numeroDeCamas",
+          valorMedio:{$toString :{$floor: "$media"}},
+          _id:0
+      }
+    },
+    {
+        $sort: {
+          pais: 1,
+          habitaciones: 1,
+      }
+    }
+    
+])
 ```
 
 ## Desafío

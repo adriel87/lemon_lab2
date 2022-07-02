@@ -214,23 +214,18 @@ use('airbnb')
 // OPTIONAL
 
 db.listingsAndReviews.aggregate([
-    {
-        $match: {
-          "address.country":{$regex:".*"}
-        }
-    },
-    {
+     {
         $group: {
-          _id: "$bedrooms",
-          numero: {
-           $sum: 1
+          _id: "$address.country",
+          media: {
+           $avg: "$price"
           }
         }
     },
     {
         $project: {
-          habitaciones : "$_id",
-          numero:1,
+          pais : "$_id",
+          precio_medio_alquiler: {$toString:{$floor:"$media"}},
           _id:0
         }
     }
